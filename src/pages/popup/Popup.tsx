@@ -72,11 +72,22 @@ export default function Popup() {
   const [aiFeedbackByProjectId, setAiFeedbackByProjectId] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const activeProject = useMemo(
     () => projectList.find((project) => project.id === activeProjectId) ?? null,
     [projectList, activeProjectId]
   );
+
+  const filteredProjects = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return projectList;
+    }
+    return projectList.filter((project) =>
+      `${project.name} ${project.description}`.toLowerCase().includes(query)
+    );
+  }, [projectList, searchQuery]);
 
   useEffect(() => {
     setStoryDraft("");
@@ -255,9 +266,15 @@ export default function Popup() {
   return (
     <div className="w-[460px] max-w-full bg-gray-900 p-3 text-gray-100">
       <div className="rounded-3xl border border-gray-800 bg-gray-950/70 p-3 shadow-lg">
-        <ProjectHeader onAdd={openCreateForm} />
+        <ProjectHeader
+          onAdd={openCreateForm}
+          showAdd={!activeProject && !isFormOpen}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={() => setSearchQuery((prev) => prev.trim())}
+        />
 
-        <div className="mt-3 max-h-[520px] overflow-y-auto pr-1">
+        <div className="mt-3">
           {isFormOpen ? (
             <ProjectForm
               formMode={formMode}
@@ -281,7 +298,7 @@ export default function Popup() {
             />
           ) : (
             <ProjectList
-              projects={projectList}
+              projects={filteredProjects}
               onOpen={setActiveProjectId}
               onEdit={openEditForm}
               onDelete={handleDelete}
