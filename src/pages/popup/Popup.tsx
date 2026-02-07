@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 
-type Project = {
-  id: string;
-  name: string;
-  description: string;
-  techStack: string[];
-  userStories: string[];
-};
-
-type ProjectFormValues = {
-  id: string;
-  name: string;
-  description: string;
-  techStackInput: string;
-  userStoriesInput: string;
-};
+import ProjectDetail from "./components/ProjectDetail";
+import ProjectForm from "./components/ProjectForm";
+import ProjectHeader from "./components/ProjectHeader";
+import ProjectList from "./components/ProjectList";
+import type { Project, ProjectFormValues } from "./components/ProjectTypes";
 
 const initialProjects: Project[] = [
   {
@@ -265,218 +255,37 @@ export default function Popup() {
   return (
     <div className="w-[460px] max-w-full bg-gray-900 p-3 text-gray-100">
       <div className="rounded-3xl border border-gray-800 bg-gray-950/70 p-3 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Portfolio Workspace</p>
-            <h1 className="text-xl font-semibold tracking-wide text-gray-100">Project Pal</h1>
-          </div>
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-gray-500 text-lg font-semibold text-gray-200 transition hover:border-gray-300 hover:bg-gray-800"
-            onClick={openCreateForm}
-            aria-label="Add project"
-            title="Add project"
-          >
-            +
-          </button>
-        </div>
+        <ProjectHeader onAdd={openCreateForm} />
 
         <div className="mt-3 max-h-[520px] overflow-y-auto pr-1">
           {isFormOpen ? (
-            <div className="space-y-3 rounded-2xl border border-gray-800 bg-gray-950/40 p-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {formMode === "create" ? "Add Project" : "Edit Project"}
-              </h2>
-              <button
-                className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-300 transition hover:border-gray-500 hover:text-white"
-                onClick={() => setIsFormOpen(false)}
-              >
-                Close
-              </button>
-            </div>
-
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-xs uppercase tracking-wider text-gray-400">Name</span>
-              <input
-                className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100"
-                value={formValues.name}
-                onChange={updateFormField("name")}
-                placeholder="Project name"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-xs uppercase tracking-wider text-gray-400">Description</span>
-              <textarea
-                className="min-h-[72px] rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100"
-                value={formValues.description}
-                onChange={updateFormField("description")}
-                placeholder="Short summary"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-xs uppercase tracking-wider text-gray-400">Tech Stack</span>
-              <input
-                className="rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100"
-                value={formValues.techStackInput}
-                onChange={updateFormField("techStackInput")}
-                placeholder="React, TypeScript, ..."
-              />
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-xs uppercase tracking-wider text-gray-400">User Stories</span>
-              <textarea
-                className="min-h-[96px] rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100"
-                value={formValues.userStoriesInput}
-                onChange={updateFormField("userStoriesInput")}
-                placeholder="One story per line"
-              />
-            </label>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-gray-700 px-3 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
-                onClick={() => setIsFormOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-gray-900 transition hover:bg-emerald-400"
-                onClick={handleSave}
-              >
-                Save
-              </button>
-            </div>
-            </div>
+            <ProjectForm
+              formMode={formMode}
+              formValues={formValues}
+              onClose={() => setIsFormOpen(false)}
+              onSave={handleSave}
+              onFieldChange={updateFormField}
+            />
           ) : activeProject ? (
-            <div className="flex flex-col gap-4">
-              <div>
-                <h2 className="text-xl font-semibold break-words">{activeProject.name}</h2>
-                <p className="mt-1 text-sm text-gray-300 break-words">{activeProject.description}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button
-                    className="rounded-xl border border-gray-700 px-3 py-1 text-xs text-gray-300 transition hover:border-gray-500 hover:text-white"
-                    onClick={() => setActiveProjectId(null)}
-                  >
-                    Back
-                  </button>
-                  <button
-                    className="rounded-xl border border-gray-700 px-3 py-1 text-xs text-gray-300 transition hover:border-gray-500 hover:text-white"
-                    onClick={() => openEditForm(activeProject)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="rounded-xl border border-rose-400/60 px-3 py-1 text-xs text-rose-300 transition hover:border-rose-300 hover:text-rose-200"
-                    onClick={() => handleDelete(activeProject.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-            <div className="rounded-2xl border border-gray-800 bg-gray-950/40 p-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">Tech Stack</h3>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {activeProject.techStack.map((tech) => (
-                  <span
-                    key={tech}
-                    className="rounded-full border border-gray-800 bg-gray-900 px-3 py-1 text-xs font-medium text-gray-200"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-800 bg-gray-950/40 p-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">Previous User Stories</h3>
-              <ul className="mt-2 list-disc space-y-2 pl-4 text-sm text-gray-200">
-                {activeProject.userStories.map((story) => (
-                  <li key={story}>{story}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border border-gray-800 bg-gray-950/40 p-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
-                Add User Story + AI Feedback
-              </h3>
-              <textarea
-                className="mt-2 min-h-[84px] w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100"
-                value={storyDraft}
-                onChange={(event) => setStoryDraft(event.target.value)}
-                placeholder="As a user, I want to..."
-              />
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-gray-900 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={handleGenerateStoryFeedback}
-                  disabled={!storyDraft.trim() || isGenerating}
-                >
-                  {isGenerating ? "Generating..." : "Generate Feedback"}
-                </button>
-                {aiError && <span className="text-xs text-rose-300">{aiError}</span>}
-              </div>
-              {aiFeedbackByProjectId[activeProject.id] && (
-                <div className="mt-3 rounded-xl border border-gray-800 bg-gray-900/70 p-3 text-sm text-gray-200">
-                  <p className="text-xs uppercase tracking-wider text-gray-400">AI Feedback</p>
-                  <div className="mt-2 whitespace-pre-wrap">
-                    {aiFeedbackByProjectId[activeProject.id]}
-                  </div>
-                </div>
-              )}
-            </div>
-            </div>
+            <ProjectDetail
+              project={activeProject}
+              storyDraft={storyDraft}
+              isGenerating={isGenerating}
+              aiError={aiError}
+              aiFeedback={aiFeedbackByProjectId[activeProject.id]}
+              onBack={() => setActiveProjectId(null)}
+              onEdit={openEditForm}
+              onDelete={handleDelete}
+              onStoryDraftChange={setStoryDraft}
+              onGenerateFeedback={handleGenerateStoryFeedback}
+            />
           ) : (
-            <div className="grid gap-3">
-              {projectList.map((project) => (
-                <div key={project.id} className="rounded-2xl border border-gray-800 bg-gray-950/40 p-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-100 break-words">{project.name}</h2>
-                    <p className="mt-1 text-sm text-gray-300 break-words">{project.description}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <button
-                        className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-300 transition hover:border-gray-500 hover:text-white"
-                        onClick={() => setActiveProjectId(project.id)}
-                      >
-                        Open
-                      </button>
-                      <button
-                        className="rounded-lg border border-gray-700 px-2 py-1 text-xs text-gray-300 transition hover:border-gray-500 hover:text-white"
-                        onClick={() => openEditForm(project)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="rounded-lg border border-rose-400/60 px-2 py-1 text-xs text-rose-300 transition hover:border-rose-300 hover:text-rose-200"
-                        onClick={() => handleDelete(project.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {project.techStack.map((tech) => (
-                      <span
-                        key={tech}
-                        className="rounded-full border border-gray-800 bg-gray-900 px-2 py-1 text-[10px] font-medium text-gray-300"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {projectList.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-gray-700 p-6 text-center text-sm text-gray-400">
-                  No projects yet. Use the + button to add one.
-                </div>
-              )}
-            </div>
+            <ProjectList
+              projects={projectList}
+              onOpen={setActiveProjectId}
+              onEdit={openEditForm}
+              onDelete={handleDelete}
+            />
           )}
         </div>
       </div>
