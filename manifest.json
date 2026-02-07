@@ -11,6 +11,9 @@
       "32": "project logo.svg"
     }
   },
+  "chrome_url_overrides": {
+    "newtab": "src/pages/newtab/index.html"
+  },
   "icons": {
     "128": "project logo.svg"
   },

@@ -15,6 +15,9 @@ export default function ProjectList({ projects, onOpen, onEdit, onDelete }: Proj
           <div>
             <h2 className="text-lg font-semibold text-gray-100 break-words">{project.name}</h2>
             <p className="mt-1 text-sm text-gray-300 break-words">{project.description}</p>
+            <p className="mt-2 text-xs uppercase tracking-wider text-gray-400">
+              Next deadline: {project.nextDeadline || "Not set"}
+            </p>
             <p className="mt-2 text-xs uppercase tracking-wider text-gray-500">
               Last updated: {project.lastUpdated}
             </p>
