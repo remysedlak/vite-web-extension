@@ -78,6 +78,8 @@ const parseLineList = (value: string) =>
     .map((entry) => entry.trim())
     .filter(Boolean);
 
+const STORAGE_KEY = "project-pal:data";
+
 export default function Popup() {
   const [projectList, setProjectList] = useState<Project[]>(initialProjects);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -85,7 +87,9 @@ export default function Popup() {
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [formValues, setFormValues] = useState<ProjectFormValues>(emptyFormValues);
   const [storyDraft, setStoryDraft] = useState("");
-  const [aiFeedbackByProjectId, setAiFeedbackByProjectId] = useState<Record<string, string>>({});
+  const [aiFeedbackByProjectId, setAiFeedbackByProjectId] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,9 +110,38 @@ export default function Popup() {
   }, [projectList, searchQuery]);
 
   useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(stored) as {
+        projects?: Project[];
+        aiFeedbackByProjectId?: Record<string, Record<string, string>>;
+      };
+      if (parsed.projects?.length) {
+        setProjectList(parsed.projects);
+      }
+      if (parsed.aiFeedbackByProjectId) {
+        setAiFeedbackByProjectId(parsed.aiFeedbackByProjectId);
+      }
+    } catch (error) {
+      console.error("Failed to parse stored project data", error);
+    }
+  }, []);
+
+  useEffect(() => {
     setStoryDraft("");
     setAiError(null);
   }, [activeProjectId]);
+
+  useEffect(() => {
+    const payload = JSON.stringify({
+      projects: projectList,
+      aiFeedbackByProjectId,
+    });
+    localStorage.setItem(STORAGE_KEY, payload);
+  }, [projectList, aiFeedbackByProjectId]);
 
   const updateFormField = (field: keyof ProjectFormValues) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -200,6 +233,8 @@ export default function Popup() {
       return;
     }
 
+    const storyKey = trimmedStory;
+
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string | undefined;
     if (!apiKey) {
       setAiError("Missing OpenRouter API key. Set VITE_OPENROUTER_API_KEY in your env.");
@@ -216,11 +251,11 @@ export default function Popup() {
       `Existing User Stories: ${activeProject.userStories.join(" | ") || "N/A"}`,
       `New User Story: ${trimmedStory}`,
       "",
-      "Provide feedback on the new user story using this format:",
-      "- Improved Story (if needed)",
-      "- Acceptance Criteria (3-5 bullets)",
-      "- Edge Cases (2-4 bullets)",
-      "- Implementation Notes (2-4 bullets)"
+      "Respond with a short review (max 6 bullets total) using this format:",
+      "- What is good (1-2 bullets)",
+      "- What to change (2-4 bullets)",
+      "If needed, include a single-line Improved Story after the bullets.",
+      "Keep it concise and avoid extra sections."
     ].join("\n");
 
     try {
@@ -259,7 +294,13 @@ export default function Popup() {
         throw new Error("OpenRouter returned an empty response.");
       }
 
-      setAiFeedbackByProjectId((prev) => ({ ...prev, [activeProject.id]: content }));
+      setAiFeedbackByProjectId((prev) => ({
+        ...prev,
+        [activeProject.id]: {
+          ...prev[activeProject.id],
+          [storyKey]: content,
+        },
+      }));
       setProjectList((prev) =>
         prev.map((project) =>
           project.id === activeProject.id
@@ -309,7 +350,7 @@ export default function Popup() {
               storyDraft={storyDraft}
               isGenerating={isGenerating}
               aiError={aiError}
-              aiFeedback={aiFeedbackByProjectId[activeProject.id]}
+              aiFeedbackByStory={aiFeedbackByProjectId[activeProject.id] ?? {}}
               onBack={() => setActiveProjectId(null)}
               onEdit={openEditForm}
               onDelete={handleDelete}
