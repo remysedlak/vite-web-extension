@@ -6,6 +6,9 @@ import ProjectHeader from "./components/ProjectHeader";
 import ProjectList from "./components/ProjectList";
 import type { Project, ProjectFormValues } from "./components/ProjectTypes";
 
+const STORAGE_KEY = "project-pal:projects";
+const FEEDBACK_STORAGE_KEY = "project-pal:feedback";
+
 const formatTimestamp = (date: Date) => {
   const pad = (value: number) => value.toString().padStart(2, "0");
   const hours = date.getHours();
@@ -19,7 +22,7 @@ const formatTimestamp = (date: Date) => {
   return `${month}-${day}-${year} ${displayHours}:${minutes} ${period}`;
 };
 
-const initialProjects: Project[] = [
+const INITIAL_PROJECTS: Project[] = [
   {
     id: "project-pal",
     name: "Project Pal",
@@ -58,6 +61,7 @@ const initialProjects: Project[] = [
   },
 ];
 
+
 const emptyFormValues: ProjectFormValues = {
   id: "",
   name: "",
@@ -78,10 +82,8 @@ const parseLineList = (value: string) =>
     .map((entry) => entry.trim())
     .filter(Boolean);
 
-const STORAGE_KEY = "project-pal:data";
-
 export default function Popup() {
-  const [projectList, setProjectList] = useState<Project[]>(initialProjects);
+  const [projectList, setProjectList] = useState<Project[]>(INITIAL_PROJECTS);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
@@ -109,39 +111,39 @@ export default function Popup() {
     );
   }, [projectList, searchQuery]);
 
+  // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return;
-    }
     try {
-      const parsed = JSON.parse(stored) as {
-        projects?: Project[];
-        aiFeedbackByProjectId?: Record<string, Record<string, string>>;
-      };
-      if (parsed.projects?.length) {
-        setProjectList(parsed.projects);
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setProjectList(JSON.parse(stored));
       }
-      if (parsed.aiFeedbackByProjectId) {
-        setAiFeedbackByProjectId(parsed.aiFeedbackByProjectId);
+      const storedFeedback = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+      if (storedFeedback) {
+        setAiFeedbackByProjectId(JSON.parse(storedFeedback));
       }
     } catch (error) {
-      console.error("Failed to parse stored project data", error);
+      console.error("Failed to load from localStorage", error);
     }
   }, []);
 
+  // Save to localStorage whenever projects change
   useEffect(() => {
-    setStoryDraft("");
-    setAiError(null);
-  }, [activeProjectId]);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projectList));
+    } catch (error) {
+      console.error("Failed to save projects to localStorage", error);
+    }
+  }, [projectList]);
 
+  // Save to localStorage whenever feedback changes
   useEffect(() => {
-    const payload = JSON.stringify({
-      projects: projectList,
-      aiFeedbackByProjectId,
-    });
-    localStorage.setItem(STORAGE_KEY, payload);
-  }, [projectList, aiFeedbackByProjectId]);
+    try {
+      localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(aiFeedbackByProjectId));
+    } catch (error) {
+      console.error("Failed to save feedback to localStorage", error);
+    }
+  }, [aiFeedbackByProjectId]);
 
   const updateFormField = (field: keyof ProjectFormValues) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
