@@ -37,7 +37,3 @@ For Firefox
 2. Access - [about:debugging#/runtime/this-firefox](about:debugging#/runtime/this-firefox)
 3. Click - Load temporary Add-on
 4. Select - any file in `dist_firefox` folder (i.e. `manifest.json`) in this project (after dev or build)
-- [Tailwind CSS 4](https://tailwindcss.com/docs/configuration)
-
-# Contributing <a name="contributing"></a>
-Feel free to open PRs or raise issues!
