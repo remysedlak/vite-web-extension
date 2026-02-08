@@ -4,6 +4,8 @@
 Technologies
 - React / Vite
 - OpenRouter
+- Tailwind
+- localStorage
   
 ### Getting Started <a name="gettingStarted"></a>
 
